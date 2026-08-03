@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "skills": [
+    {
+      "name": "agent-state-sync",
+      "source": "github:example/agent-state-sync",
+      "revision": "v0.1.0",
+      "sha256": "document-source-digest-here",
+      "reviewed": true,
+      "install_mode": "shared-search-path"
+    }
+  ]
+}

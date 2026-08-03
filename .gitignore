@@ -1,0 +1,7 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.agent-state-sync/
+*.inventory.json
+*.plan.json
+*.space.json

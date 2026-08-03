@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "plugins": [
+    {
+      "id": "example-plugin",
+      "source": "official-or-reviewed-source",
+      "version": "0.0.0",
+      "reviewed": false,
+      "install_approval": "required",
+      "install_mode": "reuse-existing"
+    }
+  ]
+}

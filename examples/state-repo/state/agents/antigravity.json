@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "agent_id": "antigravity",
+  "adapter": "capability-discovery",
+  "required_capabilities": [
+    "skills",
+    "shared-search-path"
+  ],
+  "optional_capabilities": [
+    "models",
+    "instructions",
+    "plugins-manifest",
+    "curated-memory"
+  ]
+}

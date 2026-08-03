@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "locale": "zh-CN",
+  "communication": {
+    "lead_with_outcome": true,
+    "prefer_plain_language": true,
+    "avoid_unnecessary_formatting": true
+  },
+  "safety": {
+    "external_actions_need_confirmation": true,
+    "preserve_user_changes": true
+  }
+}

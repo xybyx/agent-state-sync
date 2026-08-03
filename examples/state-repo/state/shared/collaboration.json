@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "lead_agent": "codex",
+  "routing": [
+    {
+      "task_type": "fast",
+      "agent": "antigravity",
+      "model": "example-fast-model",
+      "review_required": false
+    },
+    {
+      "task_type": "deep-planning",
+      "agent": "workbuddy",
+      "model": "example-reasoning-model",
+      "review_required": true,
+      "reviewer": "codex"
+    }
+  ],
+  "required_events": [
+    "dispatch",
+    "handoff",
+    "retry",
+    "failure",
+    "review"
+  ]
+}

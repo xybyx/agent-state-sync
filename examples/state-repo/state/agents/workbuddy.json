@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "agent_id": "workbuddy",
+  "adapter": "capability-discovery",
+  "required_capabilities": [
+    "skills"
+  ],
+  "optional_capabilities": [
+    "models",
+    "instructions",
+    "plugins-manifest",
+    "preferences",
+    "curated-memory"
+  ]
+}

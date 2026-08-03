@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "default_route": "reasoning",
+  "routes": {
+    "fast": {
+      "provider": "provider-a",
+      "model": "example-fast-model",
+      "auth_ref": "keychain://provider-a/default"
+    },
+    "reasoning": {
+      "provider": "provider-b",
+      "model": "example-reasoning-model",
+      "auth_ref": "env://PROVIDER_B_TOKEN"
+    }
+  },
+  "fallback": [
+    "reasoning",
+    "fast"
+  ]
+}

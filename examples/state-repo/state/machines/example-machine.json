@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "machine_id": "example-machine",
+  "platform": "detect-at-runtime",
+  "approved_roots": [
+    "configured-locally"
+  ],
+  "space_exceptions": []
+}

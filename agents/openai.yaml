@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent State Sync"
+  short_description: "Sync safe agent state with minimal disk use"
+  default_prompt: "Use $agent-state-sync to inspect local drift and plan a safe state sync."

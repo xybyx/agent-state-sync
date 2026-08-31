@@ -64,6 +64,11 @@ python3 <skill-dir>/scripts/agent_state_sync.py inventory \
   --output <inventory.json>
 ~~~
 
+Use 1-128 character stable ASCII identifiers for `--machine` and `--agent`.
+Start with a letter or digit; after that use only letters, digits, dots,
+underscores, and hyphens. Do not pass paths or user-supplied free text as
+identifiers.
+
 Skip denylisted paths, symlinks, caches, databases, virtual environments, and
 files that trigger the secret scanner. Do not include secret values in output.
 

@@ -89,6 +89,9 @@ SECRET_PATTERNS = [
     ),
 ]
 
+IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+VERSION_CONTROL_DIR_NAMES = {".git", ".hg", ".svn"}
+
 
 class SyncError(Exception):
     """Expected, user-actionable failure."""
@@ -100,6 +103,16 @@ def utc_now():
 
 def print_json(value):
     print(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True))
+
+
+def validate_identifier(value, label):
+    """Reject path separators and ambiguous identifiers before building filenames."""
+    if not isinstance(value, str) or not IDENTIFIER_PATTERN.fullmatch(value):
+        raise SyncError(
+            "{} must be 1-128 ASCII letters, digits, dots, underscores, or hyphens; "
+            "it must start with a letter or digit".format(label)
+        )
+    return value
 
 
 def write_json(path, value):
@@ -261,6 +274,8 @@ def inventory_root(root, root_id, excluded):
 def cmd_inventory(args):
     if not args.root:
         raise SyncError("At least one --root is required")
+    validate_identifier(args.machine, "--machine")
+    validate_identifier(args.agent, "--agent")
     excluded = []
     records = []
     roots = []
@@ -315,9 +330,11 @@ def validate_state_repo(repo):
     if schema_path.is_file():
         try:
             schema = load_json(schema_path)
-            if schema.get("schema") != "agent-state-sync":
+            if not isinstance(schema, dict):
+                issues.append({"type": "invalid-schema-document", "path": "schema-version.json"})
+            elif schema.get("schema") != "agent-state-sync":
                 issues.append({"type": "wrong-schema", "path": "schema-version.json"})
-            if schema.get("version") != SCHEMA_VERSION:
+            if isinstance(schema, dict) and schema.get("version") != SCHEMA_VERSION:
                 issues.append({"type": "unsupported-schema-version", "path": "schema-version.json"})
         except SyncError as exc:
             issues.append({"type": "invalid-json", "path": "schema-version.json", "message": str(exc)})
@@ -327,12 +344,25 @@ def validate_state_repo(repo):
             current = Path(directory)
             for name in list(directories):
                 candidate = current / name
-                if name in DENY_DIR_NAMES or candidate.is_symlink():
+                if candidate.is_symlink():
                     issues.append(
                         {
                             "type": "denylisted-path",
                             "path": str(candidate.relative_to(repo)),
-                            "reason": "denylisted-directory" if name in DENY_DIR_NAMES else "symlink",
+                            "reason": "symlink",
+                        }
+                    )
+                    directories.remove(name)
+                    continue
+                if current == repo and name in VERSION_CONTROL_DIR_NAMES:
+                    directories.remove(name)
+                    continue
+                if name in DENY_DIR_NAMES:
+                    issues.append(
+                        {
+                            "type": "denylisted-path",
+                            "path": str(candidate.relative_to(repo)),
+                            "reason": "denylisted-directory",
                         }
                     )
                     directories.remove(name)
@@ -397,14 +427,20 @@ def cmd_doctor(args):
 
 def load_inventory(path):
     inventory = load_json(path)
+    if not isinstance(inventory, dict):
+        raise SyncError("Inventory must be a JSON object: {}".format(path))
     if inventory.get("inventory_version") != INVENTORY_VERSION:
         raise SyncError("Unsupported inventory version in {}".format(path))
     if not isinstance(inventory.get("files"), list):
         raise SyncError("Inventory files must be a list: {}".format(path))
+    validate_identifier(inventory.get("machine_id"), "inventory machine_id")
+    validate_identifier(inventory.get("agent_id"), "inventory agent_id")
     return inventory
 
 
 def cmd_plan(args):
+    validate_identifier(args.machine, "--machine")
+    validate_identifier(args.agent, "--agent")
     repo = Path(args.state_repo).expanduser()
     issues = validate_state_repo(repo)
     if issues:
@@ -421,6 +457,10 @@ def cmd_plan(args):
         return 1
 
     current = load_inventory(args.inventory)
+    if current.get("machine_id") != args.machine:
+        raise SyncError("inventory machine_id does not match --machine")
+    if current.get("agent_id") != args.agent:
+        raise SyncError("inventory agent_id does not match --agent")
     baseline_path = repo / "state" / "machines" / "{}.inventory.json".format(args.machine)
     baseline = load_inventory(baseline_path) if baseline_path.is_file() else None
     old = {relative_key(item): item for item in (baseline or {}).get("files", [])}
@@ -442,7 +482,7 @@ def cmd_plan(args):
         "machine_id": args.machine,
         "agent_id": args.agent,
         "baseline": str(baseline_path.relative_to(repo)) if baseline else None,
-        "requires_confirmation": False,
+        "requires_confirmation": bool(changes),
         "write_actions": ["snapshot-baseline"] if changes else [],
         "summary": dict(sorted(counts.items())),
         "changes": changes,
@@ -457,6 +497,7 @@ def cmd_plan(args):
 def cmd_snapshot(args):
     if not args.confirm:
         raise SyncError("snapshot writes the private state repository; pass --confirm")
+    validate_identifier(args.machine, "--machine")
     repo = Path(args.state_repo).expanduser()
     issues = validate_state_repo(repo)
     if issues:
@@ -464,7 +505,15 @@ def cmd_snapshot(args):
     inventory = load_inventory(args.inventory)
     if inventory.get("machine_id") != args.machine:
         raise SyncError("inventory machine_id does not match --machine")
-    destination = repo / "state" / "machines" / "{}.inventory.json".format(args.machine)
+    repo_root = repo.resolve()
+    machines_root = (repo / "state" / "machines").resolve()
+    try:
+        machines_root.relative_to(repo_root)
+    except ValueError as exc:
+        raise SyncError("state/machines resolves outside the state repository") from exc
+    destination = (machines_root / "{}.inventory.json".format(args.machine)).resolve()
+    if destination.parent != machines_root:
+        raise SyncError("snapshot destination escaped state/machines")
     write_json(destination, inventory)
     result = {
         "ok": True,

@@ -201,6 +201,8 @@ python3 "$AGENT_SYNC_SKILL/scripts/agent_state_sync.py" inventory \
 ~~~
 
 Claude、Antigravity 和 WorkBuddy 必须替换为实际确认过的路径和 Agent ID。
+machine-id 和 Agent ID 必须是 1-128 个 ASCII 字符，首字符为字母或数字，
+其余只能使用字母、数字、点、下划线和连字符；不得把路径或自由文本当作 ID。
 盘点会跳过敏感文件、缓存、数据库、虚拟环境和软链接，不会复制文件。
 
 ### 3. 生成漂移计划
